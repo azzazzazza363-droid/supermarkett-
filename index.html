@@ -23,7 +23,7 @@ body{margin:0;background:var(--bg);color:var(--tx);font-family:Cairo,system-ui,-
 .ib{width:44px;height:44px;border-radius:14px;border:0;background:var(--card);box-shadow:var(--sh);font-size:20px;cursor:pointer;color:var(--tx)}
 .row{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:18px;padding:12px;margin-bottom:10px;box-shadow:var(--sh)}
 .row .ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:26px;color:#fff}
-.cam{width:44px;height:44px;border-radius:12px;background:var(--bd);display:grid;place-items:center;cursor:pointer;overflow:hidden;flex:none;font-size:20px}.cam img{width:100%;height:100%;object-fit:cover}
+.cam{position:relative;width:44px;height:44px;border-radius:12px;background:var(--bd);display:grid;place-items:center;cursor:pointer;overflow:hidden;flex:none;font-size:20px}.cam img{width:100%;height:100%;object-fit:cover}.ed{position:absolute;left:0;bottom:0;background:rgba(0,0,0,.65);color:#fff;font-size:11px;line-height:1;padding:3px 5px;border-radius:0 8px 0 0}
 .row .n{flex:1;font-weight:600}.row .p{color:var(--ac);font-weight:800;font-size:14px}
 .q{display:flex;align-items:center;gap:8px}.q b{min-width:20px;text-align:center}
 .q button{width:36px;height:36px;border-radius:12px;border:0;font-size:20px;font-weight:800;cursor:pointer;background:var(--bd);color:var(--tx)}
@@ -126,7 +126,7 @@ function admin(){
  CATS.forEach(function(c){
   h+='<div class="ch">'+c.e+' '+c.n+'</div>';
   items.filter(function(i){return i.cat===c.id&&!i.del}).forEach(function(i){
-   h+='<div class="row"><label class="cam">'+(si(i.img)?'<img src="'+i.img+'" alt="">':'📷')+'<input type="file" accept="image/*" data-img="'+i.id+'" hidden></label><div class="n">'+esc(i.name)+'</div><input style="width:92px" type="number" inputmode="numeric" value="'+i.price+'" data-pr="'+i.id+'"><button class="dl" data-a="d" data-i="'+i.id+'">🗑</button></div>';
+   h+='<div class="row"><label class="cam">'+(si(i.img)?'<img src="'+i.img+'" alt=""><span class="ed">✎</span>':'📷')+'<input type="file" accept="image/*" data-img="'+i.id+'" hidden></label>'+(si(i.img)?'<button class="dl" data-a="ri" data-i="'+i.id+'" aria-label="حذف الصورة">✖</button>':'')+'<div class="n">'+esc(i.name)+'</div><input style="width:92px" type="number" inputmode="numeric" value="'+i.price+'" data-pr="'+i.id+'"><button class="dl" data-a="d" data-i="'+i.id+'">🗑</button></div>';
   });
  });
  var dl=[];
@@ -167,10 +167,12 @@ function act(e){
  else if(a==="out"){authed=false;go("home")}
  else if(a==="t"){items.forEach(function(i){if(i.id==id)i.on=!i.on});save();draw()}
  else if(a==="d"){ask={t:"d",id:id};askUI("متأكد من حذف هذا المنتج؟",true)}
+ else if(a==="ri"){ask={t:"i",id:id};askUI("حذف صورة هذا المنتج؟",true)}
  else if(a==="no"){ask=null;var o1=document.getElementById("ov");if(o1)o1.remove()}
  else if(a==="yes"){var q=ask;ask=null;var o2=document.getElementById("ov");if(o2)o2.remove();
   if(q&&q.t==="d"){items=items.filter(function(i){return i.id!=q.id});msg="تم حذف المنتج";save()}
   else if(q&&q.t==="a"){items.push({id:Date.now(),cat:q.c,name:q.n,price:q.p,on:true});msg="تمت إضافة: "+q.n;save()}
+  else if(q&&q.t==="i"){items.forEach(function(i){if(i.id==q.id)i.img=""});msg="تم حذف الصورة";save()}
   draw()}
  else if(a==="r"){items.forEach(function(i){if(i.id==id)i.del=false});save();draw()}
  else if(a==="x"){items=items.filter(function(i){return i.id!=id});save();draw()}
@@ -187,7 +189,7 @@ function pickImg(id,file){
   var m=240,k=Math.min(1,m/Math.max(im.width,im.height));
   var c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
   c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-  var u=c.toDataURL("image/jpeg",0.6);
+  var q=0.6,u=c.toDataURL("image/jpeg",q);while(u.length>40000&&q>0.2){q-=0.1;u=c.toDataURL("image/jpeg",q)}
   items.forEach(function(i){if(i.id==id)i.img=u});save();draw();
  };im.onerror=function(){msg="تعذر قراءة الصورة";draw()};im.src=r.result};
  r.readAsDataURL(file);
@@ -210,7 +212,7 @@ document.body.addEventListener("click",function(e){if(e.target.closest("#ov"))ac
 app.addEventListener("pointerdown",function(e){if(e.target.closest('[data-a="add"]')){e.preventDefault();add()}});
 app.addEventListener("change",function(e){
  var fid=e.target.getAttribute("data-img");
- if(fid&&e.target.files&&e.target.files[0]){pickImg(fid,e.target.files[0]);return}
+ if(fid&&e.target.files&&e.target.files[0]){pickImg(fid,e.target.files[0]);e.target.value="";return}
  var id=e.target.getAttribute("data-pr");
  if(id){items.forEach(function(i){if(i.id==id)i.price=parseFloat(e.target.value)||i.price});save();draw()}
 });
